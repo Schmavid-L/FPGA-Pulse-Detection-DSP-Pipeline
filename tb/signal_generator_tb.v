@@ -108,6 +108,60 @@ module signal_generator_tb;
                     expected_index,
                     sample_index
                 );
+                // Verify samples inside the 13-position Barker pulse
+if ((sample_index >= echo_delay) &&
+    (sample_index < echo_delay + 8'd13)) begin
+
+    case (sample_index - echo_delay)
+
+        // Positive Barker positions should equal +64 plus noise
+        8'd0, 8'd1, 8'd2, 8'd3, 8'd4,
+        8'd7, 8'd8, 8'd10, 8'd12: begin
+
+            if ((sample_out < 12'sd56) ||
+                (sample_out > 12'sd71)) begin
+
+                $display(
+                    "ERROR: Positive pulse out of range at index %0d: %0d",
+                    sample_index,
+                    sample_out
+                );
+
+                errors = errors + 1;
+            end
+        end
+
+        // Negative Barker positions should equal -64 plus noise
+        default: begin
+            if ((sample_out < -12'sd72) ||
+                (sample_out > -12'sd57)) begin
+
+                $display(
+                    "ERROR: Negative pulse out of range at index %0d: %0d",
+                    sample_index,
+                    sample_out
+                );
+
+                errors = errors + 1;
+            end
+        end
+    endcase
+end
+
+// Outside the pulse, only noise should be present
+else begin
+    if ((sample_out < -12'sd8) ||
+        (sample_out > 12'sd7)) begin
+
+        $display(
+            "ERROR: Noise out of range at index %0d: %0d",
+            sample_index,
+            sample_out
+        );
+
+        errors = errors + 1;
+    end
+end
                 errors = errors + 1;
             end
 
